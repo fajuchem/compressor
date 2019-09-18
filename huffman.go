@@ -1,7 +1,10 @@
 package huffman
 
 import (
+	"bytes"
 	"container/heap"
+	"fmt"
+	"unicode/utf8"
 )
 
 type tree interface {
@@ -69,21 +72,69 @@ func buildTree(runesFreq map[rune]int) tree {
 	return heap.Pop(&trees).(tree)
 }
 
-var encodedText []rune
+var dic = make(map[rune][]rune)
 
-func generateString(t tree, prefix []rune) {
+func buildDictionary(t tree, prefix []rune) {
 	switch i := t.(type) {
 	case leaf:
-		encodedText = append(encodedText, prefix...)
+		dic[i.value] = prefix
 	case node:
 		prefix = append(prefix, '0')
-		generateString(i.left, prefix)
+		buildDictionary(i.left, prefix)
 		prefix = prefix[:len(prefix)-1]
 
 		prefix = append(prefix, '1')
-		generateString(i.right, prefix)
+		buildDictionary(i.right, prefix)
 		prefix = prefix[:len(prefix)-1]
 	}
+}
+
+var encodedText []rune
+
+func encodeTree(t tree) {
+	switch i := t.(type) {
+	case leaf:
+		encodedText = append(encodedText, '1')
+		encodedText = append(encodedText, i.value)
+	case node:
+		encodedText = append(encodedText, '0')
+		encodeTree(i.left)
+		encodeTree(i.right)
+	}
+}
+
+func decodeTree(b *bytes.Buffer) tree {
+	c, _ := b.ReadByte()
+
+	if c == byte('1') {
+		v, _ := b.ReadByte()
+		return leaf{1, rune(v)}
+	} else {
+		left := decodeTree(b)
+		right := decodeTree(b)
+
+		return node{1, left, right}
+	}
+
+	//if b.UnreadRune() == '1' {
+	//	a := []rune(rest[:1])
+	//	return leaf{1, a[0]}
+	//} else {
+	//	left := decodeTree(rest)
+	//	right := decodeTree(rest)
+	//
+	//	return node{1, left, right}
+	//}
+}
+
+func Decode(text string) string {
+	buf := bytes.NewBufferString(text)
+	tree := decodeTree(buf)
+
+	buildDictionary(tree, []rune{})
+	printCodes(tree, []byte{})
+
+	return "a"
 }
 
 func Encode(text string) string {
@@ -94,7 +145,37 @@ func Encode(text string) string {
 	}
 
 	tree := buildTree(runesFreq)
-	generateString(tree, []rune{})
+	buildDictionary(tree, []rune{})
+
+	encodeTree(tree)
+	printCodes(tree, []byte{})
+
+	for _, c := range text {
+		encodedText = append(encodedText, dic[c]...)
+	}
 
 	return string(encodedText)
+}
+
+func trimFirstRune(s string) (rune, string) {
+	v, i := utf8.DecodeRuneInString(s)
+	return v, s[i:]
+}
+func printCodes(tree tree, prefix []byte) {
+	switch i := tree.(type) {
+	case leaf:
+		// print out symbol, frequency, and code for this
+		// leaf (which is just the prefix)
+		fmt.Printf("%c\t%d\t%s\n", i.value, i.freq, string(prefix))
+	case node:
+		// traverse left
+		prefix = append(prefix, '0')
+		printCodes(i.left, prefix)
+		prefix = prefix[:len(prefix)-1]
+
+		// traverse right
+		prefix = append(prefix, '1')
+		printCodes(i.right, prefix)
+		prefix = prefix[:len(prefix)-1]
+	}
 }
