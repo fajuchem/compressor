@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"container/heap"
 	"fmt"
+	"io"
+	"log"
+	"os"
 	"unicode/utf8"
 )
 
@@ -72,32 +75,30 @@ func buildTree(runesFreq map[rune]int) tree {
 	return heap.Pop(&trees).(tree)
 }
 
-var dic = make(map[rune][]rune)
-
-func buildDictionary(t tree, prefix []rune) {
+func buildDictionary(t tree, prefix []rune, dic map[rune]string) {
 	switch i := t.(type) {
 	case leaf:
-		dic[i.value] = prefix
+		dic[i.value] = string(prefix)
 	case node:
 		prefix = append(prefix, '0')
-		buildDictionary(i.left, prefix)
+		buildDictionary(i.left, prefix, dic)
 		prefix = prefix[:len(prefix)-1]
 
 		prefix = append(prefix, '1')
-		buildDictionary(i.right, prefix)
+		buildDictionary(i.right, prefix, dic)
 		prefix = prefix[:len(prefix)-1]
 	}
 }
 
-var encodedText []rune
+var encodedTree []rune
 
 func encodeTree(t tree) {
 	switch i := t.(type) {
 	case leaf:
-		encodedText = append(encodedText, '1')
-		encodedText = append(encodedText, i.value)
+		encodedTree = append(encodedTree, '1')
+		encodedTree = append(encodedTree, i.value)
 	case node:
-		encodedText = append(encodedText, '0')
+		encodedTree = append(encodedTree, '0')
 		encodeTree(i.left)
 		encodeTree(i.right)
 	}
@@ -131,10 +132,35 @@ func Decode(text string) string {
 	buf := bytes.NewBufferString(text)
 	tree := decodeTree(buf)
 
-	buildDictionary(tree, []rune{})
-	printCodes(tree, []byte{})
+	buildDictionary(tree, []rune{}, map[rune]string{})
+	//printCodes(tree, []byte{})
 
 	return "a"
+}
+
+type BitReader struct {
+	reader io.ByteReader
+	byte   byte
+	offset byte
+}
+
+func New(r io.ByteReader) *BitReader {
+	return &BitReader{r, 0, 0}
+}
+
+func (r *BitReader) ReadBit() (bool, error) {
+	if r.offset == 8 {
+		r.offset = 0
+	}
+	if r.offset == 0 {
+		var err error
+		if r.byte, err = r.reader.ReadByte(); err != nil {
+			return false, err
+		}
+	}
+	bit := (r.byte & (0x80 >> r.offset)) != 0
+	r.offset++
+	return bit, nil
 }
 
 func Encode(text string) string {
@@ -145,27 +171,82 @@ func Encode(text string) string {
 	}
 
 	tree := buildTree(runesFreq)
-	buildDictionary(tree, []rune{})
+
+	//var dic = make(map[rune][]rune)
+	buildDictionary(tree, []rune{}, dic2)
 
 	encodeTree(tree)
-	printCodes(tree, []byte{})
+	//printCodes(tree, []byte{})
 
+	var encodedText string
 	for _, c := range text {
-		encodedText = append(encodedText, dic[c]...)
+		encodedText += dic2[c]
 	}
+	data := []byte(encodedText)
+	write(data)
 
 	return string(encodedText)
 }
+
+func write(bytes []byte) {
+	file, err := os.Create("test.bin")
+	defer file.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var result []byte
+	var currentByte byte = 0
+	var i uint = 0
+	for _, b := range bytes {
+		if b == 49 {
+			//fmt.Println(bytes)
+			currentByte |= 1 << (7 - i)
+		}
+		//fmt.Printf("%08b\n", currentByte)
+
+		i++
+		// @TODO corrigir: quando nao fecha 8 bits não adiciona o resto
+		if i == 8 {
+			i = 0
+			result = append(result, currentByte)
+			currentByte = 0
+		}
+	}
+	fmt.Println(result)
+
+	_, err = file.Write(result)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+//func read() {
+//	fmt.Println(data)
+//	r := New(bytes.NewBuffer(data))
+//	fmt.Printf("%b", data[0])
+//	fmt.Println("")
+//	for i := 0; i < 1; i++ {
+//		for j := 0; j < 8; j++ {
+//			bit, _ := r.ReadBit()
+//			fmt.Printf("%b[%d] = %t\n", data[i], j, bit)
+//		}
+//	}
+//}
 
 func trimFirstRune(s string) (rune, string) {
 	v, i := utf8.DecodeRuneInString(s)
 	return v, s[i:]
 }
+
+var dic2 = make(map[rune]string)
+
 func printCodes(tree tree, prefix []byte) {
 	switch i := tree.(type) {
 	case leaf:
 		// print out symbol, frequency, and code for this
 		// leaf (which is just the prefix)
+		dic2[i.value] = string(prefix)
 		fmt.Printf("%c\t%d\t%s\n", i.value, i.freq, string(prefix))
 	case node:
 		// traverse left
