@@ -221,18 +221,22 @@ func write(bytes []byte) {
 	}
 }
 
-//func read() {
-//	fmt.Println(data)
-//	r := New(bytes.NewBuffer(data))
-//	fmt.Printf("%b", data[0])
-//	fmt.Println("")
-//	for i := 0; i < 1; i++ {
-//		for j := 0; j < 8; j++ {
-//			bit, _ := r.ReadBit()
-//			fmt.Printf("%b[%d] = %t\n", data[i], j, bit)
-//		}
-//	}
-//}
+func Read() string {
+	file, _ := os.Open("test.bin")
+	var data []byte
+	i, _  := file.Read(data)
+	fmt.Println(data, i)
+	//r := New(bytes.NewBuffer(data))
+	fmt.Println("")
+	//for i := 0; i < 1; i++ {
+	//	for j := 0; j < 8; j++ {
+	//		bit, _ := r.ReadBit()
+	//		fmt.Printf("%b[%d] = %t\n", data[i], j, bit)
+	//	}
+	//}
+
+	return "a"
+}
 
 func trimFirstRune(s string) (rune, string) {
 	v, i := utf8.DecodeRuneInString(s)
@@ -260,3 +264,48 @@ func printCodes(tree tree, prefix []byte) {
 		prefix = prefix[:len(prefix)-1]
 	}
 }
+
+//func write() {
+//	//New a bit stream writer with default 5 byte
+//	b := bstream.NewBStreamWriter(1)
+//	b2 := bstream.NewBStreamWriter(1)
+//
+//	//Write 0xa0a0 into bstream
+//	b.WriteBit(true)
+//	b.WriteBit(false)
+//	b.WriteBit(false)
+//	b2.WriteBit(true)
+//	b2.WriteBit(true)
+//	b2.WriteBit(false)
+//
+//	//Read 4 bit out
+//	result, _ := b.ReadBits(8)
+//	result2, _ := b2.ReadBits(8)
+//    
+//    var bytes []byte
+//
+//    bytes = append(bytes, byte(result))
+//    bytes = append(bytes, byte(result2))
+//    fmt.Println("writing: ", bytes)
+//
+//    f, _ := os.Create("teste.bin")
+//    defer f.Close()
+//
+//    _, _ = f.Write(bytes)
+//}
+//
+//func read() {
+//    f, _ := os.Open("teste.bin")
+//    defer f.Close()
+//
+//    stats, _ := f.Stat()
+//
+//    var size int64 = stats.Size()
+//    _ = size
+//    bytes := make([]byte, size)
+//
+//    bufr := bufio.NewReader(f)
+//    _, _ = bufr.Read(bytes)
+//
+//    fmt.Println("reading: ", bytes)
+//}

@@ -1,7 +1,7 @@
 package huffman_test
 
 import (
-	"github.com/fajuchem/compressor"
+	"github.com/fajuchem/compressor/huffman"
 	"testing"
 )
 

@@ -15,16 +15,18 @@ func toBinaryRunes(s string) string {
 }
 
 func main() {
-	text := "aabbc"
+	//text := "aabbc"
 
-	encodedText := huffman.Encode(text)
+	fmt.Println(huffman.Read())
+
+	//encodedText := huffman.Encode(text)
 
 	//s := toBinaryRunes(encodedText)
 
 	//fmt.Println(encodedText)
 	//fmt.Println(s)
 
-	if encodedText != "this is an example for huffman encoding" {
-		//fmt.Println(encodedText)
-	}
+	//if encodedText != "this is an example for huffman encoding" {
+	//	fmt.Println(encodedText)
+	//}
 }
