@@ -1,25 +1,18 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/fajuchem/compressor/huffman"
 )
 
-func toBinaryRunes(s string) string {
-	var buffer bytes.Buffer
-	for _, runeValue := range s {
-		fmt.Fprintf(&buffer, "%b", runeValue)
-	}
-	return fmt.Sprintf("%s", buffer.Bytes())
-}
-
 func main() {
-	//text := "aabbc"
+	text := "aabbc"
 
-	fmt.Println(huffman.Read())
+	//huffman.Read()
 
-	//encodedText := huffman.Encode(text)
+	encodedText := huffman.Encode(text)
+	huffman.Write(encodedText)
+	huffman.Read()
 
 	//s := toBinaryRunes(encodedText)
 

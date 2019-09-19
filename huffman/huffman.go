@@ -1,13 +1,13 @@
 package huffman
 
 import (
+	"bufio"
 	"bytes"
 	"container/heap"
 	"fmt"
 	"io"
 	"log"
 	"os"
-	"unicode/utf8"
 )
 
 type tree interface {
@@ -163,7 +163,7 @@ func (r *BitReader) ReadBit() (bool, error) {
 	return bit, nil
 }
 
-func Encode(text string) string {
+func Encode(text string) []byte {
 	runesFreq := make(map[rune]int)
 
 	for _, c := range text {
@@ -176,19 +176,18 @@ func Encode(text string) string {
 	buildDictionary(tree, []rune{}, dic2)
 
 	encodeTree(tree)
-	//printCodes(tree, []byte{})
+	printCodes(tree, []byte{})
 
 	var encodedText string
 	for _, c := range text {
 		encodedText += dic2[c]
 	}
 	data := []byte(encodedText)
-	write(data)
 
-	return string(encodedText)
+	return data
 }
 
-func write(bytes []byte) {
+func Write(bytes []byte) {
 	file, err := os.Create("test.bin")
 	defer file.Close()
 	if err != nil {
@@ -213,34 +212,28 @@ func write(bytes []byte) {
 			currentByte = 0
 		}
 	}
-	fmt.Println(result)
 
+	fmt.Println("writing: ", result)
 	_, err = file.Write(result)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func Read() string {
-	file, _ := os.Open("test.bin")
-	var data []byte
-	i, _  := file.Read(data)
-	fmt.Println(data, i)
-	//r := New(bytes.NewBuffer(data))
-	fmt.Println("")
-	//for i := 0; i < 1; i++ {
-	//	for j := 0; j < 8; j++ {
-	//		bit, _ := r.ReadBit()
-	//		fmt.Printf("%b[%d] = %t\n", data[i], j, bit)
-	//	}
-	//}
+func Read() {
+	f, _ := os.Open("test.bin")
+	defer f.Close()
 
-	return "a"
-}
+	stats, _ := f.Stat()
 
-func trimFirstRune(s string) (rune, string) {
-	v, i := utf8.DecodeRuneInString(s)
-	return v, s[i:]
+	var size int64 = stats.Size()
+	_ = size
+	bytes := make([]byte, size)
+
+	bufr := bufio.NewReader(f)
+	_, _ = bufr.Read(bytes)
+
+	fmt.Println("reading: ", bytes)
 }
 
 var dic2 = make(map[rune]string)
@@ -281,7 +274,7 @@ func printCodes(tree tree, prefix []byte) {
 //	//Read 4 bit out
 //	result, _ := b.ReadBits(8)
 //	result2, _ := b2.ReadBits(8)
-//    
+//
 //    var bytes []byte
 //
 //    bytes = append(bytes, byte(result))
@@ -292,20 +285,4 @@ func printCodes(tree tree, prefix []byte) {
 //    defer f.Close()
 //
 //    _, _ = f.Write(bytes)
-//}
-//
-//func read() {
-//    f, _ := os.Open("teste.bin")
-//    defer f.Close()
-//
-//    stats, _ := f.Stat()
-//
-//    var size int64 = stats.Size()
-//    _ = size
-//    bytes := make([]byte, size)
-//
-//    bufr := bufio.NewReader(f)
-//    _, _ = bufr.Read(bytes)
-//
-//    fmt.Println("reading: ", bytes)
 //}
