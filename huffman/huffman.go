@@ -115,21 +115,59 @@ func decodeTree(b *bytes.Buffer) tree {
 	}
 }
 
-func Decode(text []byte) []byte {
+func Decode(text []byte) string {
 	result := []byte{}
 	buf := bytes.NewBufferString(string(text))
 	tree := decodeTree(buf)
 
-	buildDictionary(tree, []rune{}, map[rune]string{})
+	var dic = make(map[rune]string)
+	buildDictionary(tree, []rune{}, dic)
 
 	for {
 		c, _ := buf.ReadByte()
 		if c <= 0 {
 			break
 		}
-		result = append(result, c)
+		result = append(result, byteToBytes(c)...)
 	}
+	newDic := invert(dic)
+
+	var current = ""
+	var final = ""
+	for _, v := range result {
+		current += string(v)
+		if v, ok := newDic[current]; ok {
+			current = ""
+			final += string(v)
+		}
+	}
+
+	fmt.Println("---------------- tree ----------------")
 	printCodes(tree, []byte{})
+	fmt.Println("-------------- end tree --------------")
+
+	return final
+}
+
+func invert(dic map[rune]string) map[string]rune {
+	var newDic = make(map[string]rune)
+	for k, v := range dic {
+		newDic[v] = k
+	}
+
+	return newDic
+}
+
+func byteToBytes(b byte) []byte {
+	var result []byte
+	for i := uint(1); i <= 8; i++ {
+		t := b & (1 << (8 - i))
+		if t > 0 {
+			result = append(result, byte('1'))
+		} else {
+			result = append(result, byte('0'))
+		}
+	}
 
 	return result
 }
@@ -159,7 +197,7 @@ func (r *BitReader) ReadBit() (bool, error) {
 	return bit, nil
 }
 
-func Encode(text string) []byte {
+func Encode(text string) ([]byte, []byte) {
 	runesFreq := make(map[rune]int)
 
 	for _, c := range text {
@@ -179,9 +217,7 @@ func Encode(text string) []byte {
 		encodedText += dic2[c]
 	}
 
-	result := append([]byte(string(encodedTree)), []byte(encodedText)...)
-
-	return result
+	return []byte(string(encodedTree)), []byte(encodedText)
 }
 
 var dic2 = make(map[rune]string)

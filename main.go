@@ -4,36 +4,32 @@ import (
 	"fmt"
 	"github.com/fajuchem/compressor/huffman"
 	"github.com/fajuchem/compressor/io"
+	"io/ioutil"
+	"os"
 )
 
 func main() {
-	text := "aabbc"
-	filename := "test.bin"
+	inputFile := os.Args[1]
+	temp, _ := os.Open(inputFile)
+	t, _ := ioutil.ReadAll(temp)
+	text := string(t[:len(t)-1])
+	filename := inputFile + ".bin"
 
-	encodedText := huffman.Encode(text)
-	fmt.Println("written:", encodedText)
+	encodedTree, encodedText := huffman.Encode(text)
+	encoded := append(encodedTree, io.ByteToBit(encodedText)...)
 
-	io.Write(filename, encodedText)
+	fmt.Println("input:", text)
+
+	io.Write(filename, encoded)
+	fmt.Println("written:", encoded)
+
 	data, _ := io.Read(filename)
 	fmt.Println("read:", data)
 
-	var result []byte
-	fmt.Println("all", data)
-	for _, b := range data {
-		for i := uint(1); i <= 8; i++ {
-			t := b & (1 << (8 - i))
-			fmt.Println("aqui", t)
-			if t > 0 {
-				result = append(result, byte('1'))
-			} else {
-				result = append(result, byte('0'))
-			}
-		}
-	}
+	decoded := huffman.Decode(data)
+	fmt.Println("decoded:", decoded)
 
-	//decoded := huffman.Decode(data)
-
-	//fmt.Println(string(decoded))
+	fmt.Println("corrupted?", decoded != text)
 
 	//if encodedText != "this is an example for huffman encoding" {
 	//	fmt.Println(encodedText)

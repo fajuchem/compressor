@@ -2,11 +2,10 @@ package io
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 )
 
-func Write(name string, bytes []byte) ([]byte, error) {
+func ByteToBit(bytes []byte) []byte {
 	var output []byte
 	var currentByte byte = 0
 	var i uint = 0
@@ -24,22 +23,25 @@ func Write(name string, bytes []byte) ([]byte, error) {
 		}
 	}
 
+	return output
+}
+
+func Write(name string, bytes []byte) error {
 	file, err := os.Create(name)
 	defer file.Close()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	_, err = file.Write(output)
+	_, err = file.Write(bytes)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return output, nil
+	return nil
 }
 
 func Read(name string) ([]byte, error) {
-	fmt.Println("")
 	f, err := os.Open(name)
 	defer f.Close()
 	if err != nil {
