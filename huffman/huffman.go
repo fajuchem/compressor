@@ -1,13 +1,10 @@
 package huffman
 
 import (
-	"bufio"
 	"bytes"
 	"container/heap"
 	"fmt"
 	"io"
-	"log"
-	"os"
 )
 
 type tree interface {
@@ -116,26 +113,25 @@ func decodeTree(b *bytes.Buffer) tree {
 
 		return node{1, left, right}
 	}
-
-	//if b.UnreadRune() == '1' {
-	//	a := []rune(rest[:1])
-	//	return leaf{1, a[0]}
-	//} else {
-	//	left := decodeTree(rest)
-	//	right := decodeTree(rest)
-	//
-	//	return node{1, left, right}
-	//}
 }
 
-func Decode(text string) string {
-	buf := bytes.NewBufferString(text)
+func Decode(text []byte) []byte {
+	result := []byte{}
+	buf := bytes.NewBufferString(string(text))
 	tree := decodeTree(buf)
 
 	buildDictionary(tree, []rune{}, map[rune]string{})
-	//printCodes(tree, []byte{})
 
-	return "a"
+	for {
+		c, _ := buf.ReadByte()
+		if c <= 0 {
+			break
+		}
+		result = append(result, c)
+	}
+	printCodes(tree, []byte{})
+
+	return result
 }
 
 type BitReader struct {
@@ -182,58 +178,10 @@ func Encode(text string) []byte {
 	for _, c := range text {
 		encodedText += dic2[c]
 	}
-	data := []byte(encodedText)
 
-	return data
-}
+	result := append([]byte(string(encodedTree)), []byte(encodedText)...)
 
-func Write(bytes []byte) {
-	file, err := os.Create("test.bin")
-	defer file.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var result []byte
-	var currentByte byte = 0
-	var i uint = 0
-	for _, b := range bytes {
-		if b == 49 {
-			//fmt.Println(bytes)
-			currentByte |= 1 << (7 - i)
-		}
-		//fmt.Printf("%08b\n", currentByte)
-
-		i++
-		// @TODO corrigir: quando nao fecha 8 bits não adiciona o resto
-		if i == 8 {
-			i = 0
-			result = append(result, currentByte)
-			currentByte = 0
-		}
-	}
-
-	fmt.Println("writing: ", result)
-	_, err = file.Write(result)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func Read() {
-	f, _ := os.Open("test.bin")
-	defer f.Close()
-
-	stats, _ := f.Stat()
-
-	var size int64 = stats.Size()
-	_ = size
-	bytes := make([]byte, size)
-
-	bufr := bufio.NewReader(f)
-	_, _ = bufr.Read(bytes)
-
-	fmt.Println("reading: ", bytes)
+	return result
 }
 
 var dic2 = make(map[rune]string)
